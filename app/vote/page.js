@@ -1,4 +1,3 @@
-// app/vote/page.js
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,16 +9,13 @@ import { useRouter } from 'next/navigation';
 export default function VotePage() {
   const [maleCandidates, setMaleCandidates] = useState([]);
   const [femaleCandidates, setFemaleCandidates] = useState([]);
-  
   const [selectedMale, setSelectedMale] = useState(null);
   const [selectedFemale, setSelectedFemale] = useState(null);
-
   const [searchQuery, setSearchQuery] = useState('');
-  
   const [message, setMessage] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [voteCompleted, setVoteCompleted] = useState(false);
-  
+
   const { authUser, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -52,7 +48,7 @@ export default function VotePage() {
     setMessage('');
 
     try {
-      if (!authUser) throw new Error("Sesi login tidak ditemukan.");
+      if (!authUser) throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
 
       await runTransaction(db, async (transaction) => {
         const userDocRef = doc(db, 'users', authUser.uid);
@@ -60,15 +56,19 @@ export default function VotePage() {
         const femaleCandidateRef = doc(db, 'candidates', selectedFemale);
 
         const userDoc = await transaction.get(userDocRef);
-        if (!userDoc.exists()) throw new Error("Data pengguna tidak ditemukan.");
-        if (userDoc.data().hasVoted) throw new Error("Anda sudah pernah memberikan suara.");
-        
         const maleCandidateDoc = await transaction.get(maleCandidateRef);
         const femaleCandidateDoc = await transaction.get(femaleCandidateRef);
-        if (!maleCandidateDoc.exists() || !femaleCandidateDoc.exists()) throw new Error("Kandidat tidak valid.");
 
-        transaction.update(maleCandidateRef, { voteCount: maleCandidateDoc.data().voteCount + 1 });
-        transaction.update(femaleCandidateRef, { voteCount: femaleCandidateDoc.data().voteCount + 1 });
+        if (!userDoc.exists()) throw new Error("Data pengguna tidak ditemukan di database.");
+        if (userDoc.data().hasVoted) throw new Error("Anda sudah pernah memberikan suara.");
+        if (!maleCandidateDoc.exists() || !femaleCandidateDoc.exists()) throw new Error("Kandidat yang dipilih tidak valid.");
+
+        const newMaleVoteCount = maleCandidateDoc.data().voteCount + 1;
+        transaction.update(maleCandidateRef, { voteCount: newMaleVoteCount });
+
+        const newFemaleVoteCount = femaleCandidateDoc.data().voteCount + 1;
+        transaction.update(femaleCandidateRef, { voteCount: newFemaleVoteCount });
+        
         transaction.update(userDocRef, { hasVoted: true });
       });
 
@@ -108,14 +108,14 @@ export default function VotePage() {
   return (
     <main className="container mx-auto p-8">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold">PILIH KANDIDAT ANDA</h1>
+        <h1 className="text-3xl font-bold">PILIHLAH</h1>
         <p className="mt-2 text-gray-600">Pilih masing-masing 1 kandidat laki-laki dan perempuan.</p>
       </div>
 
       <div className="mb-10 max-w-xl mx-auto">
         <input
           type="text"
-          placeholder="Anda bisa cari nama kandidat di sini..."
+          placeholder="Bisa cari nama di sini..."
           className="w-full px-5 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -136,7 +136,7 @@ export default function VotePage() {
           ))}
         </div>
         {filteredMaleCandidates.length === 0 && searchQuery && (
-          <p className="text-center text-gray-500 mt-4">Kandidat Laki-laki dengan nama "{searchQuery}" tidak ditemukan.</p>
+          <p className="text-center text-gray-500 mt-4">Kandidat Laki-laki dengan nama '{searchQuery}' tidak ditemukan.</p>
         )}
       </section>
 
@@ -154,11 +154,10 @@ export default function VotePage() {
           ))}
         </div>
         {filteredFemaleCandidates.length === 0 && searchQuery && (
-          <p className="text-center text-gray-500 mt-4">Kandidat Perempuan dengan nama "{searchQuery}" tidak ditemukan.</p>
+          <p className="text-center text-gray-500 mt-4">Kandidat Perempuan dengan nama '{searchQuery}' tidak ditemukan.</p>
         )}
       </section>
       
-      {/* TOMBOL SUBMIT DIKEMBALIKAN DI SINI */}
       <footer className="text-center mt-8">
         {message && <p className="mb-4 font-semibold text-red-600">{message}</p>}
         <button
@@ -166,7 +165,7 @@ export default function VotePage() {
           disabled={!selectedMale || !selectedFemale || submitLoading}
           className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg disabled:bg-gray-400 hover:bg-green-700 transition-colors"
         >
-          {submitLoading ? 'Mengirim...' : 'K I R I M'}
+          {submitLoading ? 'Mengirim...' : 'SUBMIT VOTE'}
         </button>
       </footer>
     </main>
