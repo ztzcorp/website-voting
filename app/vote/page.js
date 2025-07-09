@@ -108,7 +108,7 @@ export default function VotePage() {
   return (
     <main className="container mx-auto p-8">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold">P E M I L I H A N</h1>
+        <h1 className="text-3xl font-bold">PILIH KANDIDAT ANDA</h1>
         <p className="mt-2 text-gray-600">Pilih masing-masing 1 kandidat laki-laki dan perempuan.</p>
       </div>
 
