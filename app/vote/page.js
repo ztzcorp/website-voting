@@ -136,7 +136,8 @@ export default function VotePage() {
           ))}
         </div>
         {filteredMaleCandidates.length === 0 && searchQuery && (
-          <p className="text-center text-gray-500 mt-4">Kandidat Laki-laki dengan nama '{searchQuery}' tidak ditemukan.</p>
+          // Baris yang sudah diperbaiki
+<p className="text-center text-gray-500 mt-4">{`Kandidat Laki - laki dengan nama '${searchQuery}' tidak ditemukan.`}</p>
         )}
       </section>
 
@@ -154,7 +155,8 @@ export default function VotePage() {
           ))}
         </div>
         {filteredFemaleCandidates.length === 0 && searchQuery && (
-          <p className="text-center text-gray-500 mt-4">Kandidat Perempuan dengan nama '{searchQuery}' tidak ditemukan.</p>
+          // Baris yang sudah diperbaiki
+          <p className="text-center text-gray-500 mt-4">{`Kandidat Perempuan dengan nama '${searchQuery}' tidak ditemukan.`}</p>
         )}
       </section>
       
