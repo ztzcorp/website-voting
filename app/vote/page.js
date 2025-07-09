@@ -3,37 +3,35 @@
 
 import { useState, useEffect } from 'react';
 import { db, auth } from '../../firebaseConfig';
-import { collection, getDocs, doc, runTransaction, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
+import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 export default function VotePage() {
+  // State untuk data kandidat
   const [maleCandidates, setMaleCandidates] = useState([]);
   const [femaleCandidates, setFemaleCandidates] = useState([]);
+  
+  // State untuk pilihan user
   const [selectedMale, setSelectedMale] = useState(null);
   const [selectedFemale, setSelectedFemale] = useState(null);
-  const [user, setUser] = useState(null);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [loading, setLoading] = useState(true);
+  
+  // State untuk UI feedback
+  const [message, setMessage] = useState('');
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [voteCompleted, setVoteCompleted] = useState(false); // <-- State baru
+  
+  const { authUser, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Cek status login dan status vote user
+  // Redirect jika belum login
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().hasVoted) {
-          setHasVoted(true);
-        }
-        setLoading(false);
-      } else {
-        router.push('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (authLoading) return; 
+
+    if (!authUser) {
+      router.push('/login');
+    }
+  }, [authUser, authLoading, router]);
 
   // Ambil data kandidat dari Firestore
   useEffect(() => {
@@ -46,112 +44,126 @@ export default function VotePage() {
     fetchCandidates();
   }, []);
 
+  // Fungsi submit vote yang diperbarui
   const handleSubmitVote = async () => {
-    if (!selectedMale || !selectedFemale) {
-      alert('Anda harus memilih 1 kandidat laki-laki dan 1 kandidat perempuan.');
-      return;
-    }
-    if (!user || hasVoted) {
-        alert('Anda sudah melakukan voting atau tidak memiliki akses.');
-        return;
-    }
+  if (!selectedMale || !selectedFemale) {
+    setMessage('Anda harus memilih satu kandidat dari setiap kategori.');
+    return;
+  }
+  setSubmitLoading(true);
+  setMessage('');
+  
+  try {
+    if (!authUser) throw new Error("Sesi login tidak ditemukan.");
 
-    try {
-      // KODE YANG SUDAH DIPERBAIKI
-await runTransaction(db, async (transaction) => {
-    // 1. Define all document references
-    const userDocRef = doc(db, 'users', user.uid);
-    const maleCandidateRef = doc(db, 'candidates', selectedMale);
-    const femaleCandidateRef = doc(db, 'candidates', selectedFemale);
+    await runTransaction(db, async (transaction) => {
+      // --- TAHAP 1: DEFINISIKAN SEMUA REFERENSI DOKUMEN ---
+      const userDocRef = doc(db, 'users', authUser.uid);
+      const maleCandidateRef = doc(db, 'candidates', selectedMale);
+      const femaleCandidateRef = doc(db, 'candidates', selectedFemale);
 
-    // --- READ PHASE ---
-    // 2. Execute all reads first
-    const userDoc = await transaction.get(userDocRef);
-    const maleCandidateDoc = await transaction.get(maleCandidateRef);
-    const femaleCandidateDoc = await transaction.get(femaleCandidateRef);
+      // --- TAHAP 2: BACA SEMUA DATA TERLEBIH DAHULU (READS) ---
+      const userDoc = await transaction.get(userDocRef);
+      const maleCandidateDoc = await transaction.get(maleCandidateRef);
+      const femaleCandidateDoc = await transaction.get(femaleCandidateRef);
 
-    // 3. Perform validation using the data you just read
-    if (userDoc.exists() && userDoc.data().hasVoted) {
-        throw new Error("User sudah melakukan vote!");
-    }
-    if (!maleCandidateDoc.exists() || !femaleCandidateDoc.exists()) {
-        throw new Error("Kandidat tidak ditemukan.");
-    }
+      // --- TAHAP 3: LAKUKAN VALIDASI ---
+      if (!userDoc.exists()) {
+        throw new Error("Data pengguna tidak ditemukan di database.");
+      }
+      if (userDoc.data().hasVoted) {
+        throw new Error("Anda sudah pernah memberikan suara sebelumnya.");
+      }
+      if (!maleCandidateDoc.exists() || !femaleCandidateDoc.exists()) {
+        throw new Error("Kandidat yang dipilih tidak valid.");
+      }
 
-    // --- WRITE PHASE ---
-    // 4. After all reads are complete, perform all writes
-    const newMaleVoteCount = maleCandidateDoc.data().voteCount + 1;
-    transaction.update(maleCandidateRef, { voteCount: newMaleVoteCount });
+      // --- TAHAP 4: TULIS SEMUA DATA (WRITES) ---
+      const newMaleVoteCount = maleCandidateDoc.data().voteCount + 1;
+      transaction.update(maleCandidateRef, { voteCount: newMaleVoteCount });
 
-    const newFemaleVoteCount = femaleCandidateDoc.data().voteCount + 1;
-    transaction.update(femaleCandidateRef, { voteCount: newFemaleVoteCount });
+      const newFemaleVoteCount = femaleCandidateDoc.data().voteCount + 1;
+      transaction.update(femaleCandidateRef, { voteCount: newFemaleVoteCount });
 
-    transaction.update(userDocRef, { hasVoted: true });
-});
+      transaction.update(userDocRef, { hasVoted: true });
+    });
 
-      alert('Terima kasih! Suara Anda telah berhasil direkam.');
-      setHasVoted(true); // Update state di UI
-      router.push('/laporan'); // Arahkan ke laporan
-    } catch (error) {
-      console.error("Error submitting vote: ", error);
-      alert('Terjadi kesalahan saat menyimpan suara Anda.');
-    }
-  };
+    // Jika transaksi berhasil, set status vote selesai
+    setVoteCompleted(true);
 
-  if (loading) {
-    return <p className="text-center mt-10">Loading...</p>;
+  } catch (error) {
+    console.error("Detail Error Vote:", error);
+    setMessage(`Gagal: ${error.message}`);
+  } finally {
+    setSubmitLoading(false); 
+  }
+};
+
+  // Tampilan loading awal
+  if (authLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Memeriksa status...</div>;
   }
 
-  if (hasVoted) {
+  // Tampilan "Terima Kasih" jika user baru saja vote atau sudah pernah vote sebelumnya
+  if (voteCompleted || (userProfile && userProfile.hasVoted)) {
     return (
-        <div className="text-center mt-20">
-            <h1 className="text-2xl font-bold">Terima Kasih!</h1>
-            <p>Anda sudah melakukan voting.</p>
-            <button onClick={() => router.push('/laporan')} className="mt-4 px-4 py-2 bg-green-500 text-white rounded">Lihat Hasil</button>
-        </div>
+        <main className="flex items-center justify-center min-h-screen text-center p-4">
+            <div>
+                <h1 className="text-3xl font-bold text-green-600">Terimakasih.</h1>
+                <p className="mt-2 text-xl text-slate-700">Bangun Kemandirian, Raih Kesejahteraan</p>
+            </div>
+        </main>
     );
   }
 
+  // Tampilan utama halaman vote
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Pilih Manusia Terfavorit Anda</h1>
+    <main className="container mx-auto p-8">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold">PEMILIHAN</h1>
+        <p className="mt-2 text-gray-600">Pilih masing-masing 1 kandidat laki-laki dan perempuan.</p>
+      </div>
 
-      {/* Kandidat Laki-laki */}
-      <div className="mb-12">
+      <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Kategori Laki-laki</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {maleCandidates.map(candidate => (
-            <div key={candidate.id}
-                 className={`p-4 border rounded-lg cursor-pointer text-center ${selectedMale === candidate.id ? 'bg-blue-500 text-white ring-2 ring-blue-700' : 'bg-white'}`}
-                 onClick={() => setSelectedMale(candidate.id)}>
-              <h3 className="font-bold text-lg">{candidate.name}</h3>
+            <div
+              key={candidate.id}
+              className={`p-4 border rounded-lg cursor-pointer text-center transition-colors ${selectedMale === candidate.id ? 'bg-blue-500 text-white' : 'bg-white hover:bg-blue-50'}`}
+              onClick={() => setSelectedMale(candidate.id)}
+            >
+              <p className="font-bold text-lg">{candidate.name}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Kandidat Perempuan */}
-      <div className="mb-12">
+      <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Kategori Perempuan</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {femaleCandidates.map(candidate => (
-            <div key={candidate.id}
-                 className={`p-4 border rounded-lg cursor-pointer text-center ${selectedFemale === candidate.id ? 'bg-pink-500 text-white ring-2 ring-pink-700' : 'bg-white'}`}
-                 onClick={() => setSelectedFemale(candidate.id)}>
-              <h3 className="font-bold text-lg">{candidate.name}</h3>
+            <div
+              key={candidate.id}
+              className={`p-4 border rounded-lg cursor-pointer text-center transition-colors ${selectedFemale === candidate.id ? 'bg-pink-500 text-white' : 'bg-white hover:bg-pink-50'}`}
+              onClick={() => setSelectedFemale(candidate.id)}
+            >
+              <p className="font-bold text-lg">{candidate.name}</p>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="text-center">
+      </section>
+      
+      <footer className="text-center mt-8">
+        {message && <p className="mb-4 font-semibold text-red-600">{message}</p>}
         <button
           onClick={handleSubmitVote}
-          disabled={!selectedMale || !selectedFemale}
-          className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg disabled:bg-gray-400 hover:bg-green-700 transition-colors">
-          SUBMIT VOTE
+          disabled={!selectedMale || !selectedFemale || submitLoading}
+          className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg disabled:bg-gray-400 hover:bg-green-700 transition-colors"
+        >
+          {submitLoading ? 'Mengirim...' : 'KIRIM'}
         </button>
-      </div>
-    </div>
+      </footer>
+    </main>
   );
 }

@@ -1,9 +1,8 @@
-// app/login/page.js
 'use client';
 
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth } from '../../firebaseConfig'; // Disesuaikan dengan nama file kita
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -27,7 +26,18 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login untuk Voting</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">Login untuk Voting</h1>
+
+        {/* KOTAK KETERANGAN TAMBAHAN */}
+        <div className="mb-6 p-3 text-sm text-gray-700 bg-gray-100 border border-gray-200 rounded-lg text-center">
+          <p>
+            Email: <span className="font-semibold">nama_depan_anda</span>@vote.com
+          </p>
+          <p>
+            Password: sama dengan email
+          </p>
+        </div>
+
         <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
