@@ -1,6 +1,6 @@
 // app/api/delete-user/route.js
 import { NextResponse } from 'next/server';
-import { db, admin } from '@/lib/firebase-admin';
+import { db, admin } from '@/lib/firebase-admin.js';
 
 export async function POST(req) {
   try {

@@ -1,6 +1,6 @@
 // app/api/create-user/route.js
 import { NextResponse } from 'next/server';
-import { db, admin } from '@/lib/firebase-admin'; // Kita impor admin dan db
+import { db, admin } from '@/lib/firebase-admin.js';
 
 export async function POST(req) {
   try {

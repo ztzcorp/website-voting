@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db, admin } from '@/lib/firebase-admin'; // Pastikan path ini benar
+import { db, admin } from '@/lib/firebase-admin.js';
 
 /**
  * API Route untuk menangani permintaan POST untuk mengedit data autentikasi pengguna (email/password).
