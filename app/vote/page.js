@@ -22,7 +22,11 @@ const CandidateCard = ({ candidate, isSelected, onSelect }) => {
       </div>
       <div className="flex-grow">
         <h3 className="font-bold text-lg text-gray-800">{candidate.name}</h3>
-        <p className="text-sm text-gray-500 mb-4">{candidate.position}</p>
+        <p className="text-sm text-gray-500">{candidate.position}</p>
+        {/* Tampilkan Tempat Tugas jika ada */}
+        {candidate.workplace && <p className="text-xs text-gray-400 mt-1">{candidate.workplace}</p>}
+        {/* Tampilkan Deskripsi jika ada */}
+        {candidate.description && <p className="text-sm text-gray-600 my-2 italic">"{candidate.description}"</p>}
       </div>
       <button
         onClick={onSelect}

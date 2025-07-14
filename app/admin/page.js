@@ -5,12 +5,12 @@ import { db } from '../../firebaseConfig';
 import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 
-// --- Komponen Modal untuk Form Tambah/Edit Kandidat ---
+// --- Komponen Modal untuk Form Tambah/Edit Kandidat (DIPERBAIKI) ---
 const CandidateModal = ({ isOpen, onClose, onSave, candidate, isLoading }) => {
-  const [formData, setFormData] = useState({ name: '', gender: 'Laki-laki', position: '', imageUrl: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', position: '', workplace: '', imageUrl: '', gender: 'Laki-laki' });
 
   useEffect(() => {
-    const defaultData = { name: '', gender: 'Laki-laki', position: '', imageUrl: '' };
+    const defaultData = { name: '', description: '', position: '', workplace: '', imageUrl: '', gender: 'Laki-laki' };
     if (isOpen) {
       if (candidate) {
         setFormData({ ...defaultData, ...candidate });
@@ -34,43 +34,56 @@ const CandidateModal = ({ isOpen, onClose, onSave, candidate, isLoading }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-lg text-gray-800 animate-fade-in">
-        <h2 className="text-2xl font-bold mb-6">{candidate ? 'Edit Kandidat' : 'Tambah Kandidat Baru'}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block font-semibold mb-1">Nama Lengkap</label>
-            <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-md" required />
-          </div>
-          <div>
-            <label htmlFor="position" className="block font-semibold mb-1">Jabatan</label>
-            <input type="text" name="position" id="position" value={formData.position} onChange={handleChange} className="w-full p-2 border rounded-md" required />
-          </div>
-          <div>
-            <label htmlFor="imageUrl" className="block font-semibold mb-1">URL Foto</label>
-            <input type="text" name="imageUrl" id="imageUrl" value={formData.imageUrl} onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="https://..."/>
-          </div>
-          <div>
-            <label htmlFor="gender" className="block font-semibold mb-1">Gender</label>
-            <select name="gender" id="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-md">
-              <option value="Laki-laki">Laki-laki</option>
-              <option value="Perempuan">Perempuan</option>
-            </select>
-          </div>
-          <div className="pt-4 flex flex-col sm:flex-row-reverse gap-3">
-             <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
-                {isLoading ? 'Menyimpan...' : 'Simpan'}
-             </button>
-             <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
-                Batal
-             </button>
-          </div>
-        </form>
+      {/* Perubahan: Tambahkan flex, flex-col, dan max-h */}
+      <div className="bg-white rounded-lg w-full max-w-lg text-gray-800 flex flex-col max-h-[90vh]">
+        <h2 className="text-2xl font-bold p-6 border-b">{candidate ? 'Edit Kandidat' : 'Tambah Kandidat Baru'}</h2>
+        {/* Perubahan: Area form sekarang bisa di-scroll */}
+        <div className="p-6 overflow-y-auto">
+          <form id="candidate-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block font-semibold mb-1">Nama Lengkap</label>
+              <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="w-full p-2 border rounded-md" required />
+            </div>
+            <div>
+              <label htmlFor="description" className="block font-semibold mb-1">Deskripsi Singkat</label>
+              <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows="2" className="w-full p-2 border rounded-md" placeholder="Contoh: Pekerja keras dan inovatif..."></textarea>
+            </div>
+            <div>
+              <label htmlFor="position" className="block font-semibold mb-1">Jabatan</label>
+              <input type="text" name="position" id="position" value={formData.position} onChange={handleChange} className="w-full p-2 border rounded-md" required />
+            </div>
+            <div>
+              <label htmlFor="workplace" className="block font-semibold mb-1">Tempat Tugas</label>
+              <input type="text" name="workplace" id="workplace" value={formData.workplace} onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Contoh: Kantor Pusat, Cabang Bandung"/>
+            </div>
+            <div>
+              <label htmlFor="imageUrl" className="block font-semibold mb-1">URL Foto</label>
+              <input type="text" name="imageUrl" id="imageUrl" value={formData.imageUrl} onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="https://..."/>
+            </div>
+            <div>
+              <label htmlFor="gender" className="block font-semibold mb-1">Gender</label>
+              <select name="gender" id="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        {/* Perubahan: Tombol dipisahkan ke footer modal */}
+        <div className="p-6 border-t flex flex-col sm:flex-row-reverse gap-3">
+           <button type="submit" form="candidate-form" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+              {isLoading ? 'Menyimpan...' : 'Simpan'}
+           </button>
+           <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
+              Batal
+           </button>
+        </div>
       </div>
     </div>
   );
 };
 
-// --- Komponen Modal untuk Form Tambah Pengguna ---
+// --- Komponen Modal untuk Form Tambah Pengguna (DIPERBAIKI) ---
 const UserModal = ({ isOpen, onClose, onSave, isLoading }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,33 +99,35 @@ const UserModal = ({ isOpen, onClose, onSave, isLoading }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-lg text-gray-800 animate-fade-in">
-        <h2 className="text-2xl font-bold mb-6">Tambah Pengguna Baru</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="user-email" className="block font-semibold mb-1">Email Pengguna</label>
-            <input type="email" id="user-email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border rounded-md" required />
-          </div>
-          <div>
-            <label htmlFor="user-password" className="block font-semibold mb-1">Password Awal</label>
-            <input type="password" id="user-password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded-md" required minLength={6} />
-            <p className="text-xs text-gray-500 mt-1">Minimal 6 karakter. Beritahukan password ini kepada pengguna.</p>
-          </div>
-          <div className="pt-4 flex flex-col sm:flex-row-reverse gap-3">
-             <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
-                {isLoading ? 'Menyimpan...' : 'Simpan Pengguna'}
-             </button>
-             <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
-                Batal
-             </button>
-          </div>
-        </form>
+      <div className="bg-white rounded-lg w-full max-w-lg text-gray-800 flex flex-col max-h-[90vh]">
+        <h2 className="text-2xl font-bold p-6 border-b">Tambah Pengguna Baru</h2>
+        <div className="p-6 overflow-y-auto">
+          <form id="user-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="user-email" className="block font-semibold mb-1">Email Pengguna</label>
+              <input type="email" id="user-email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border rounded-md" required />
+            </div>
+            <div>
+              <label htmlFor="user-password" className="block font-semibold mb-1">Password Awal</label>
+              <input type="password" id="user-password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded-md" required minLength={6} />
+              <p className="text-xs text-gray-500 mt-1">Minimal 6 karakter. Beritahukan password ini kepada pengguna.</p>
+            </div>
+          </form>
+        </div>
+        <div className="p-6 border-t flex flex-col sm:flex-row-reverse gap-3">
+           <button type="submit" form="user-form" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+              {isLoading ? 'Menyimpan...' : 'Simpan Pengguna'}
+           </button>
+           <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
+              Batal
+           </button>
+        </div>
       </div>
     </div>
   );
 };
 
-// --- Komponen Modal untuk Form EDIT Pengguna ---
+// --- Komponen Modal untuk Form EDIT Pengguna (DIPERBAIKI) ---
 const EditUserModal = ({ isOpen, onClose, onSave, user, isLoading }) => {
   const [formData, setFormData] = useState({ email: '', password: '', role: 'user', hasVoted: false });
 
@@ -120,7 +135,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, user, isLoading }) => {
     if (user) {
       setFormData({
         email: user.email || '',
-        password: '', // Password dikosongkan demi keamanan, diisi jika ingin diubah
+        password: '',
         role: user.role || 'user',
         hasVoted: user.hasVoted || false,
       });
@@ -129,10 +144,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, user, isLoading }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = (e) => {
@@ -144,46 +156,48 @@ const EditUserModal = ({ isOpen, onClose, onSave, user, isLoading }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-lg text-gray-800 animate-fade-in">
-        <h2 className="text-2xl font-bold mb-2">Edit Pengguna</h2>
-        <p className="mb-6 text-gray-600">{user?.email}</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="edit-email" className="block font-semibold mb-1">Email</label>
-            <input type="email" name="email" id="edit-email" value={formData.email} onChange={handleChange} className="w-full p-2 border rounded-md" required />
-          </div>
-          <div>
-            <label htmlFor="edit-password" className="block font-semibold mb-1">Password Baru (Opsional)</label>
-            <input type="password" name="password" id="edit-password" value={formData.password} onChange={handleChange} className="w-full p-2 border rounded-md" minLength={6} placeholder="Kosongkan jika tidak ingin diubah"/>
-          </div>
-          <div>
-            <label htmlFor="edit-role" className="block font-semibold mb-1">Role Pengguna</label>
-            <select name="role" id="edit-role" value={formData.role} onChange={handleChange} className="w-full p-2 border rounded-md">
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div className="flex items-center space-x-3 pt-2">
-            <input 
-              type="checkbox"
-              id="edit-hasVoted"
-              name="hasVoted"
-              checked={formData.hasVoted}
-              onChange={handleChange}
-              className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-            />
-            <label htmlFor="edit-hasVoted" className="font-semibold cursor-pointer">Sudah Melakukan Voting</label>
-          </div>
-          <p className="text-xs text-gray-500 -mt-2">Hilangkan centang untuk mereset status vote pengguna ini.</p>
-          <div className="pt-4 flex flex-col sm:flex-row-reverse gap-3">
-             <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
-                {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
-             </button>
-             <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
-                Batal
-             </button>
-          </div>
-        </form>
+      <div className="bg-white rounded-lg w-full max-w-lg text-gray-800 flex flex-col max-h-[90vh]">
+        <h2 className="text-2xl font-bold p-6 border-b">Edit Pengguna</h2>
+        <div className="p-6 overflow-y-auto">
+          <p className="mb-6 text-gray-600">Mengedit data untuk: <span className="font-semibold">{user?.email}</span></p>
+          <form id="edit-user-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="edit-email" className="block font-semibold mb-1">Email</label>
+              <input type="email" name="email" id="edit-email" value={formData.email} onChange={handleChange} className="w-full p-2 border rounded-md" required />
+            </div>
+            <div>
+              <label htmlFor="edit-password" className="block font-semibold mb-1">Password Baru (Opsional)</label>
+              <input type="password" name="password" id="edit-password" value={formData.password} onChange={handleChange} className="w-full p-2 border rounded-md" minLength={6} placeholder="Kosongkan jika tidak ingin diubah"/>
+            </div>
+            <div>
+              <label htmlFor="edit-role" className="block font-semibold mb-1">Role Pengguna</label>
+              <select name="role" id="edit-role" value={formData.role} onChange={handleChange} className="w-full p-2 border rounded-md">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-3 pt-2">
+              <input 
+                type="checkbox"
+                id="edit-hasVoted"
+                name="hasVoted"
+                checked={formData.hasVoted}
+                onChange={handleChange}
+                className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="edit-hasVoted" className="font-semibold cursor-pointer">Sudah Melakukan Voting</label>
+            </div>
+            <p className="text-xs text-gray-500 -mt-2">Hilangkan centang untuk mereset status vote pengguna ini.</p>
+          </form>
+        </div>
+        <div className="p-6 border-t flex flex-col sm:flex-row-reverse gap-3">
+           <button type="submit" form="edit-user-form" disabled={isLoading} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+              {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+           </button>
+           <button type="button" onClick={onClose} disabled={isLoading} className="w-full bg-gray-200 py-2.5 rounded-lg hover:bg-gray-300">
+              Batal
+           </button>
+        </div>
       </div>
     </div>
   );
@@ -285,11 +299,9 @@ export default function AdminPanel() {
     setEditUserFormLoading(true);
     const { email, password, role, hasVoted } = formData;
     try {
-      // 1. Update data di Firestore (role, hasVoted)
       const userDocRef = doc(db, 'users', userId);
       await updateDoc(userDocRef, { role, hasVoted });
 
-      // 2. Jika ada perubahan email atau password, panggil API
       const authDataChanged = email !== editingUser.email || password;
       if (authDataChanged) {
         const response = await fetch('/api/update-user', {
@@ -298,7 +310,7 @@ export default function AdminPanel() {
           body: JSON.stringify({
             uid: userId,
             email: email,
-            password: password || null, // Kirim null jika password kosong
+            password: password || null,
           }),
         });
         const data = await response.json();
