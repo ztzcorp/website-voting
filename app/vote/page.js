@@ -22,10 +22,8 @@ const CandidateCard = ({ candidate, isSelected, onSelect }) => {
       </div>
       <div className="flex-grow">
         <h3 className="font-bold text-lg text-gray-800">{candidate.name}</h3>
-        <p className="text-sm text-gray-500">{candidate.position}</p>
-        {/* Tampilkan Tempat Tugas jika ada */}
+        <p className="text-sm text-gray-500 mb-4">{candidate.position}</p>
         {candidate.workplace && <p className="text-xs text-gray-400 mt-1">{candidate.workplace}</p>}
-        {/* Tampilkan Deskripsi jika ada */}
         {candidate.description && <p className="text-sm text-gray-600 my-2 italic">"{candidate.description}"</p>}
       </div>
       <button
@@ -173,7 +171,7 @@ export default function VotePage() {
             setVotingStatus({ isActive: false, message: 'Periode voting belum diatur oleh admin.' });
         }
       } else {
-        setVotingStatus({ isActive: true, message: '' }); // Jika dokumen setting tidak ada, anggap voting terbuka
+        setVotingStatus({ isActive: true, message: '' });
       }
     });
     return () => unsubscribe();
@@ -308,6 +306,9 @@ export default function VotePage() {
               {filteredMaleCandidates.map(candidate => (
                 <CandidateCard key={candidate.id} candidate={candidate} isSelected={selectedMale === candidate.id} onSelect={() => setSelectedMale(candidate.id)} />
               ))}
+              {filteredMaleCandidates.length === 0 && searchQuery && (
+                <p className="text-center text-gray-500 mt-4 sm:col-span-2 lg:col-span-3">{`Kandidat dengan nama '${searchQuery}' tidak ditemukan.`}</p>
+              )}
             </div>
           )}
           {activeTab === 'perempuan' && (
@@ -315,6 +316,9 @@ export default function VotePage() {
               {filteredFemaleCandidates.map(candidate => (
                 <CandidateCard key={candidate.id} candidate={candidate} isSelected={selectedFemale === candidate.id} onSelect={() => setSelectedFemale(candidate.id)} />
               ))}
+              {filteredFemaleCandidates.length === 0 && searchQuery && (
+                <p className="text-center text-gray-500 mt-4 sm:col-span-2 lg:col-span-3">{`Kandidat dengan nama '${searchQuery}' tidak ditemukan.`}</p>
+              )}
             </div>
           )}
         </div>
