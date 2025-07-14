@@ -141,7 +141,6 @@ export default function VotePage() {
   const { authUser, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Efek untuk memeriksa periode voting
   useEffect(() => {
     const settingsRef = doc(db, 'settings', 'votingPeriod');
     const unsubscribe = onSnapshot(settingsRef, (doc) => {
@@ -152,14 +151,12 @@ export default function VotePage() {
             setEndDate(null);
             return;
         }
-
         const { startDate, endDate } = data;
         if (startDate && endDate) {
             const now = new Date();
             const start = startDate.toDate();
             const end = endDate.toDate();
             setEndDate(end);
-
             if (now < start) {
               setVotingStatus({ isActive: false, message: `Voting akan dimulai pada ${start.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}` });
             } else if (now > end) {
@@ -177,14 +174,12 @@ export default function VotePage() {
     return () => unsubscribe();
   }, []);
 
-  // Efek untuk otentikasi
   useEffect(() => {
     if (authLoading) return;
     if (!authUser) router.push('/login');
     if (userProfile && userProfile.hasVoted) setVoteCompleted(true);
   }, [authUser, userProfile, authLoading, router]);
 
-  // Efek untuk mengambil data kandidat
   useEffect(() => {
     const fetchCandidates = async () => {
       const querySnapshot = await getDocs(collection(db, 'candidates'));
@@ -195,7 +190,6 @@ export default function VotePage() {
     fetchCandidates();
   }, []);
 
-  // Handler untuk menampilkan modal konfirmasi
   const handleShowConfirmation = () => {
     if (!selectedMale || !selectedFemale) {
       setMessage('Anda harus memilih satu kandidat dari setiap kategori.');
@@ -205,7 +199,6 @@ export default function VotePage() {
     setShowConfirmation(true);
   };
 
-  // Handler untuk mengirim vote setelah konfirmasi
   const handleConfirmVote = async () => {
     setSubmitLoading(true);
     try {
@@ -240,16 +233,13 @@ export default function VotePage() {
     }
   };
 
-  // Filter kandidat berdasarkan pencarian
   const filteredMaleCandidates = maleCandidates.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredFemaleCandidates = femaleCandidates.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Tampilan Loading Awal
   if (authLoading || votingStatus.message === 'Memuat status voting...') {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  // Tampilan Jika User Sudah Vote
   if (voteCompleted) {
     return (
         <main className="flex items-center justify-center min-h-screen text-center p-4">
@@ -261,7 +251,6 @@ export default function VotePage() {
     );
   }
   
-  // Tampilan Jika Voting Ditutup
   if (!votingStatus.isActive) {
     return (
       <main className="flex items-center justify-center min-h-screen">
