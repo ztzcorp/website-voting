@@ -296,7 +296,7 @@ export default function VotePage() {
                 <CandidateCard key={candidate.id} candidate={candidate} isSelected={selectedMale === candidate.id} onSelect={() => setSelectedMale(candidate.id)} />
               ))}
               {filteredMaleCandidates.length === 0 && searchQuery && (
-                <p className="text-center text-gray-500 mt-4">{`Kandidat dengan nama '${searchQuery}' tidak ditemukan.`}</p>
+                <p className="text-center text-gray-500 mt-4 sm:col-span-2 lg:col-span-3">{`Kandidat dengan nama '${searchQuery}' tidak ditemukan.`}</p>
               )}
             </div>
           )}
